@@ -1,0 +1,30 @@
+name: Refresh market data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 12 3 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Refresh Zillow market data
+        run: node scripts/update-market-data.js
+
+      - name: Commit refreshed data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Refresh market data
+          file_pattern: market-data.js buy-or-rent-calculator.html
