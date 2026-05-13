@@ -379,9 +379,15 @@ input:focus {
 
 .location-entry {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(168px, auto) minmax(130px, 1fr);
-  gap: 10px;
+  grid-template-columns: auto minmax(260px, 1fr);
+  column-gap: 18px;
+  row-gap: 14px;
   align-items: end;
+}
+
+.location-entry label {
+  grid-column: 1 / -1;
+  max-width: 460px;
 }
 
 .location-button {
@@ -549,6 +555,10 @@ input:focus {
 @media (max-width: 460px) {
   .location-entry {
     grid-template-columns: 1fr;
+  }
+
+  .location-entry label {
+    max-width: none;
   }
 
   .location-button {
