@@ -335,6 +335,11 @@ form {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.location-section {
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  align-items: end;
+}
+
 fieldset {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -380,14 +385,16 @@ input:focus {
   outline: 3px solid rgba(47, 95, 159, 0.18);
 }
 
-.location-actions {
-  display: grid;
-  align-content: end;
-  gap: 8px;
+.location-button {
+  min-width: 172px;
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(47, 95, 159, 0.18);
 }
 
-.location-actions button {
-  width: 100%;
+.location-button:hover {
+  background: #254f87;
 }
 
 .location-status {
@@ -511,6 +518,20 @@ input:focus {
     grid-template-columns: 1fr;
   }
 
+  .location-section {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .location-button {
+    min-width: 148px;
+    width: auto;
+    padding: 0 10px;
+  }
+
+  .location-status {
+    grid-column: 1 / -1;
+  }
+
   .metric {
     min-height: 88px;
   }
@@ -607,10 +628,8 @@ input:focus {
               <span>City, state</span>
               <input id="marketLocation" type="text" autocomplete="address-level2" placeholder="San Francisco, CA">
             </label>
-            <div class="location-actions">
-              <button id="applyLocationButton" type="button">Use area averages</button>
-              <p id="locationStatus" class="location-status" aria-live="polite">Uses bundled Zillow Research city data when a match is found.</p>
-            </div>
+            <button id="applyLocationButton" class="location-button" type="button">Use area averages</button>
+            <p id="locationStatus" class="location-status" aria-live="polite">Uses bundled Zillow Research city data when a match is found.</p>
           </fieldset>
 
           <fieldset class="assumption-section timeline-section">
