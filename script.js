@@ -19,6 +19,9 @@ const defaults = {
 
 const form = document.querySelector("#assumptions");
 const resetButton = document.querySelector("#resetButton");
+const marketLocation = document.querySelector("#marketLocation");
+const applyLocationButton = document.querySelector("#applyLocationButton");
+const locationStatus = document.querySelector("#locationStatus");
 const chart = document.querySelector("#wealthChart");
 const ctx = chart.getContext("2d");
 
@@ -40,6 +43,16 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0
 });
 
+const stateNames = {
+  ALABAMA: "AL", ALASKA: "AK", ARIZONA: "AZ", ARKANSAS: "AR", CALIFORNIA: "CA", COLORADO: "CO", CONNECTICUT: "CT", DELAWARE: "DE",
+  FLORIDA: "FL", GEORGIA: "GA", HAWAII: "HI", IDAHO: "ID", ILLINOIS: "IL", INDIANA: "IN", IOWA: "IA", KANSAS: "KS", KENTUCKY: "KY",
+  LOUISIANA: "LA", MAINE: "ME", MARYLAND: "MD", MASSACHUSETTS: "MA", MICHIGAN: "MI", MINNESOTA: "MN", MISSISSIPPI: "MS", MISSOURI: "MO",
+  MONTANA: "MT", NEBRASKA: "NE", NEVADA: "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ", "NEW MEXICO": "NM", "NEW YORK": "NY",
+  "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", OHIO: "OH", OKLAHOMA: "OK", OREGON: "OR", PENNSYLVANIA: "PA", "RHODE ISLAND": "RI",
+  "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", TENNESSEE: "TN", TEXAS: "TX", UTAH: "UT", VERMONT: "VT", VIRGINIA: "VA",
+  WASHINGTON: "WA", "WEST VIRGINIA": "WV", WISCONSIN: "WI", WYOMING: "WY", "DISTRICT OF COLUMBIA": "DC"
+};
+
 function getInputs() {
   const values = {};
   new FormData(form).forEach((value, key) => {
@@ -53,6 +66,79 @@ function setInputs(values) {
     const input = form.elements[key];
     if (input) input.value = value;
   });
+}
+
+function roundTo(value, step) {
+  return Math.round(value / step) * step;
+}
+
+function normalizeState(value) {
+  const trimmed = value.trim();
+  if (trimmed.length === 2) return trimmed.toUpperCase();
+  return stateNames[trimmed.toUpperCase()] || trimmed.toUpperCase();
+}
+
+function normalizeCity(value) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function findMarketRecord(query) {
+  const data = window.MARKET_DATA?.records || [];
+  const parts = query.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+
+  const city = normalizeCity(parts[0]);
+  const state = parts[1] ? normalizeState(parts[1]) : "";
+
+  const matches = data.filter((record) => {
+    const cityMatches = normalizeCity(record.city) === city;
+    const stateMatches = state ? record.state === state : true;
+    return cityMatches && stateMatches;
+  });
+
+  return matches.sort((a, b) => a.sizeRank - b.sizeRank)[0] || null;
+}
+
+function setLocationStatus(message, type = "") {
+  locationStatus.textContent = message;
+  locationStatus.className = `location-status ${type}`.trim();
+}
+
+function applyMarketRecord(record) {
+  const taxRate = window.MARKET_DATA?.stateTax?.[record.state] ?? defaults.propertyTax;
+  const estimatedInsurance = Math.max(1200, record.homeValue * 0.0025);
+  const values = {
+    homePrice: roundTo(record.homeValue, 1000),
+    rent: roundTo(record.rent, 25),
+    propertyTax: Number(taxRate.toFixed(2)),
+    insurance: roundTo(estimatedInsurance, 50)
+  };
+
+  if (Number.isFinite(record.homeGrowth)) values.homeGrowth = Math.max(-20, Math.min(30, record.homeGrowth));
+  if (Number.isFinite(record.rentGrowth)) values.rentGrowth = Math.max(-10, Math.min(20, record.rentGrowth));
+
+  setInputs(values);
+  setLocationStatus(
+    `Using ${record.city}, ${record.state}: Zillow home/rent data from ${record.homeDate}; property tax uses a state average estimate.`,
+    "success"
+  );
+  update();
+}
+
+function applyLocationDefaults() {
+  const query = marketLocation.value.trim();
+  if (!query) {
+    setLocationStatus("Enter a city and state, for example: San Francisco, CA.", "error");
+    return;
+  }
+
+  const record = findMarketRecord(query);
+  if (!record) {
+    setLocationStatus("I could not find that city/state in the bundled market data. Try the nearest large city.", "error");
+    return;
+  }
+
+  applyMarketRecord(record);
 }
 
 function monthlyPayment(principal, annualRate, years) {
@@ -266,8 +352,18 @@ function update() {
 }
 
 form.addEventListener("input", update);
+form.addEventListener("submit", (event) => event.preventDefault());
+applyLocationButton.addEventListener("click", applyLocationDefaults);
+marketLocation.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    applyLocationDefaults();
+  }
+});
 resetButton.addEventListener("click", () => {
   setInputs(defaults);
+  marketLocation.value = "";
+  setLocationStatus("Uses bundled Zillow Research city data when a match is found.");
   update();
 });
 

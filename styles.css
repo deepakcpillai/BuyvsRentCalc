@@ -318,11 +318,13 @@ form {
 }
 
 .timeline-section,
+.location-section,
 .home-section {
   grid-column: 1 / -1;
 }
 
-.timeline-section {
+.timeline-section,
+.location-section {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
@@ -369,6 +371,32 @@ input {
 input:focus {
   border-color: var(--blue);
   outline: 3px solid rgba(47, 95, 159, 0.18);
+}
+
+.location-actions {
+  display: grid;
+  align-content: end;
+  gap: 8px;
+}
+
+.location-actions button {
+  width: 100%;
+}
+
+.location-status {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.location-status.success {
+  color: var(--green);
+  font-weight: 750;
+}
+
+.location-status.error {
+  color: var(--rose);
+  font-weight: 750;
 }
 
 .calculated-cost {

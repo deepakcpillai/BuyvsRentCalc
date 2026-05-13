@@ -85,6 +85,18 @@
         </div>
 
         <form id="assumptions">
+          <fieldset class="assumption-section location-section">
+            <legend>Location defaults</legend>
+            <label>
+              <span>City, state</span>
+              <input id="marketLocation" type="text" autocomplete="address-level2" placeholder="San Francisco, CA">
+            </label>
+            <div class="location-actions">
+              <button id="applyLocationButton" type="button">Use area averages</button>
+              <p id="locationStatus" class="location-status" aria-live="polite">Uses bundled Zillow Research city data when a match is found.</p>
+            </div>
+          </fieldset>
+
           <fieldset class="assumption-section timeline-section">
             <legend>Timeline</legend>
             <label>
@@ -211,6 +223,7 @@
       </section>
     </main>
 
+    <script src="market-data.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
