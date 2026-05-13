@@ -386,7 +386,19 @@ input:focus {
   box-shadow: 0 8px 18px rgba(47, 95, 159, 0.18);
 }
 
+.location-button,
+#applyLocationButton {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+}
+
 .location-button:hover {
+  background: #254f87;
+}
+
+.location-button:hover,
+#applyLocationButton:hover {
   background: #254f87;
 }
 
