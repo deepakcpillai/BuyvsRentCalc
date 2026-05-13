@@ -329,8 +329,7 @@ form {
 }
 
 .location-section {
-  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
-  align-items: end;
+  grid-template-columns: 1fr;
 }
 
 fieldset {
@@ -378,12 +377,20 @@ input:focus {
   outline: 3px solid rgba(47, 95, 159, 0.18);
 }
 
+.location-entry {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(168px, auto) minmax(130px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
 .location-button {
-  min-width: 172px;
+  min-width: 168px;
   border-color: var(--blue);
   background: var(--blue);
   color: #ffffff;
   box-shadow: 0 8px 18px rgba(47, 95, 159, 0.18);
+  white-space: nowrap;
 }
 
 .location-button,
@@ -403,8 +410,9 @@ input:focus {
 }
 
 .location-status {
+  align-self: end;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   line-height: 1.35;
 }
 
@@ -523,18 +531,10 @@ input:focus {
     grid-template-columns: 1fr;
   }
 
-  .location-section {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
   .location-button {
     min-width: 148px;
     width: auto;
     padding: 0 10px;
-  }
-
-  .location-status {
-    grid-column: 1 / -1;
   }
 
   .metric {
@@ -543,5 +543,15 @@ input:focus {
 
   canvas {
     height: 280px;
+  }
+}
+
+@media (max-width: 460px) {
+  .location-entry {
+    grid-template-columns: 1fr;
+  }
+
+  .location-button {
+    width: 100%;
   }
 }
