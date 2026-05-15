@@ -56,7 +56,7 @@ const stateNames = {
 
 const homeTypeProfiles = {
   average: {
-    label: "area average",
+    label: "all home types",
     priceFactor: 1,
     rentFactor: 1,
     maintenance: 1,
