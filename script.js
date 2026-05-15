@@ -22,6 +22,7 @@ const resetButton = document.querySelector("#resetButton");
 const marketLocation = document.querySelector("#marketLocation");
 const applyLocationButton = document.querySelector("#applyLocationButton");
 const locationStatus = document.querySelector("#locationStatus");
+const homeType = document.querySelector("#homeType");
 const chart = document.querySelector("#wealthChart");
 const ctx = chart.getContext("2d");
 
@@ -52,6 +53,51 @@ const stateNames = {
   "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", TENNESSEE: "TN", TEXAS: "TX", UTAH: "UT", VERMONT: "VT", VIRGINIA: "VA",
   WASHINGTON: "WA", "WEST VIRGINIA": "WV", WISCONSIN: "WI", WYOMING: "WY", "DISTRICT OF COLUMBIA": "DC"
 };
+
+const homeTypeProfiles = {
+  average: {
+    label: "area average",
+    priceFactor: 1,
+    rentFactor: 1,
+    maintenance: 1,
+    insuranceFactor: 1,
+    hoa: 0
+  },
+  singleFamily: {
+    label: "single-family",
+    priceFactor: 1.08,
+    rentFactor: 1.08,
+    maintenance: 1.1,
+    insuranceFactor: 1.08,
+    hoa: 0
+  },
+  townhome: {
+    label: "townhome",
+    priceFactor: 0.86,
+    rentFactor: 0.92,
+    maintenance: 0.75,
+    insuranceFactor: 0.85,
+    hoa: 250
+  },
+  condo: {
+    label: "condo",
+    priceFactor: 0.72,
+    rentFactor: 0.82,
+    maintenance: 0.55,
+    insuranceFactor: 0.7,
+    hoa: 450
+  },
+  multiFamily: {
+    label: "multi-family",
+    priceFactor: 1.18,
+    rentFactor: 1.15,
+    maintenance: 1.2,
+    insuranceFactor: 1.18,
+    hoa: 0
+  }
+};
+
+let activeMarketRecord = null;
 
 function getInputs() {
   const values = {};
@@ -105,13 +151,19 @@ function setLocationStatus(message, type = "") {
 }
 
 function applyMarketRecord(record) {
+  activeMarketRecord = record;
+  const profile = homeTypeProfiles[homeType.value] || homeTypeProfiles.average;
   const taxRate = window.MARKET_DATA?.stateTax?.[record.state] ?? defaults.propertyTax;
-  const estimatedInsurance = Math.max(1200, record.homeValue * 0.0025);
+  const adjustedHomeValue = record.homeValue * profile.priceFactor;
+  const adjustedRent = record.rent * profile.rentFactor;
+  const estimatedInsurance = Math.max(900, adjustedHomeValue * 0.0025 * profile.insuranceFactor);
   const values = {
-    homePrice: roundTo(record.homeValue, 1000),
-    rent: roundTo(record.rent, 25),
+    homePrice: roundTo(adjustedHomeValue, 1000),
+    rent: roundTo(adjustedRent, 25),
     propertyTax: Number(taxRate.toFixed(2)),
-    insurance: roundTo(estimatedInsurance, 50)
+    insurance: roundTo(estimatedInsurance, 50),
+    maintenance: profile.maintenance,
+    hoa: profile.hoa
   };
 
   if (Number.isFinite(record.homeGrowth)) values.homeGrowth = Math.max(-20, Math.min(30, record.homeGrowth));
@@ -119,7 +171,7 @@ function applyMarketRecord(record) {
 
   setInputs(values);
   setLocationStatus(
-    `Using ${record.city}, ${record.state}: Zillow home/rent data from ${record.homeDate}; property tax uses a state average estimate.`,
+    `Using ${record.city}, ${record.state} ${profile.label} defaults from Zillow data dated ${record.homeDate}; tax uses a state estimate.`,
     "success"
   );
   update();
@@ -360,9 +412,18 @@ marketLocation.addEventListener("keydown", (event) => {
     applyLocationDefaults();
   }
 });
+homeType.addEventListener("change", () => {
+  if (activeMarketRecord) {
+    applyMarketRecord(activeMarketRecord);
+  } else {
+    setLocationStatus("Choose a home type, then enter a city/state to apply area averages.");
+  }
+});
 resetButton.addEventListener("click", () => {
   setInputs(defaults);
+  activeMarketRecord = null;
   marketLocation.value = "";
+  homeType.value = "average";
   setLocationStatus("Uses bundled Zillow Research city data when a match is found.");
   update();
 });
