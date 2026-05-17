@@ -201,6 +201,45 @@
             </label>
           </fieldset>
 
+          <fieldset class="assumption-section tax-section">
+            <legend>Tax benefit estimate</legend>
+            <label>
+              <span>Filing status</span>
+              <select name="filingStatus">
+                <option value="marriedJointly">Married filing jointly</option>
+                <option value="single">Single</option>
+              </select>
+            </label>
+            <label>
+              <span>Household income</span>
+              <input name="householdIncome" type="number" min="0" step="5000" value="250000">
+            </label>
+            <label>
+              <span>Other itemized deductions</span>
+              <input name="otherItemizedDeductions" type="number" min="0" step="500" value="0">
+            </label>
+            <label>
+              <span>Federal SALT cap</span>
+              <input name="saltCap" type="number" min="0" step="1000" value="40000">
+            </label>
+            <label>
+              <span>Mortgage interest debt cap</span>
+              <input name="mortgageInterestLimit" type="number" min="0" step="25000" value="750000">
+            </label>
+            <label>
+              <span>State marginal tax rate</span>
+              <div class="input-row">
+                <input name="stateIncomeTaxRate" type="number" min="0" max="15" step="0.1" value="6">
+                <span>%</span>
+              </div>
+            </label>
+            <div class="calculated-cost tax-savings" aria-live="polite">
+              <span>Estimated tax savings monthly</span>
+              <strong id="taxSavingsMonthly">$0</strong>
+              <small>Federal itemizing benefit plus an editable state estimate</small>
+            </div>
+          </fieldset>
+
           <fieldset class="assumption-section rent-section">
             <legend>Rent + investing</legend>
             <label>

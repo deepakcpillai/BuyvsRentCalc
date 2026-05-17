@@ -321,6 +321,7 @@ form {
 .timeline-section,
 .location-section,
 .type-section,
+.tax-section,
 .home-section {
   grid-column: 1 / -1;
 }
@@ -466,6 +467,14 @@ select {
   border: 1px solid #c9bdab;
   border-radius: 8px;
   background: #ffffff;
+}
+
+.tax-savings {
+  border-left: 5px solid var(--blue);
+}
+
+.tax-savings strong {
+  color: var(--blue);
 }
 
 .calculated-cost span {

@@ -11,6 +11,12 @@ const defaults = {
   hoa: 0,
   buyingCosts: 2,
   sellingCosts: 6,
+  filingStatus: "marriedJointly",
+  householdIncome: 250000,
+  otherItemizedDeductions: 0,
+  saltCap: 40000,
+  mortgageInterestLimit: 750000,
+  stateIncomeTaxRate: 6,
   rent: 4200,
   rentGrowth: 3,
   stockGrowth: 7,
@@ -33,6 +39,7 @@ const outputs = {
   rentNet: document.querySelector("#rentNet"),
   mortgagePayment: document.querySelector("#mortgagePayment"),
   totalOwnershipCost: document.querySelector("#totalOwnershipCost"),
+  taxSavingsMonthly: document.querySelector("#taxSavingsMonthly"),
   startingRent: document.querySelector("#startingRent"),
   yearlyRows: document.querySelector("#yearlyRows"),
   explanation: document.querySelector("#explanation")
@@ -97,12 +104,48 @@ const homeTypeProfiles = {
   }
 };
 
+const stateIncomeTaxRates = {
+  AL: 5, AK: 0, AZ: 2.5, AR: 4.4, CA: 9.3, CO: 4.4, CT: 6, DE: 6.6, FL: 0, GA: 5.49, HI: 8.25, ID: 5.8,
+  IL: 4.95, IN: 3.05, IA: 4.82, KS: 5.58, KY: 4, LA: 4.25, ME: 7.15, MD: 5.75, MA: 5, MI: 4.25, MN: 7.85, MS: 4,
+  MO: 4.7, MT: 5.9, NE: 5.2, NV: 0, NH: 0, NJ: 6.37, NM: 4.9, NY: 6.33, NC: 3.99, ND: 2.5, OH: 3.5, OK: 4.75,
+  OR: 8.75, PA: 3.07, RI: 5.99, SC: 6.2, SD: 0, TN: 0, TX: 0, UT: 4.55, VT: 7.6, VA: 5.75, WA: 0, WV: 5.12,
+  WI: 5.3, WY: 0, DC: 8.5
+};
+
+const federalTaxConfig = {
+  single: {
+    standardDeduction: 16100,
+    brackets: [
+      { upTo: 12400, rate: 0.10 },
+      { upTo: 50400, rate: 0.12 },
+      { upTo: 105700, rate: 0.22 },
+      { upTo: 201775, rate: 0.24 },
+      { upTo: 256225, rate: 0.32 },
+      { upTo: 640600, rate: 0.35 },
+      { upTo: Infinity, rate: 0.37 }
+    ]
+  },
+  marriedJointly: {
+    standardDeduction: 32200,
+    brackets: [
+      { upTo: 24800, rate: 0.10 },
+      { upTo: 100800, rate: 0.12 },
+      { upTo: 211400, rate: 0.22 },
+      { upTo: 403550, rate: 0.24 },
+      { upTo: 512450, rate: 0.32 },
+      { upTo: 768700, rate: 0.35 },
+      { upTo: Infinity, rate: 0.37 }
+    ]
+  }
+};
+
 let activeMarketRecord = null;
 
 function getInputs() {
   const values = {};
-  new FormData(form).forEach((value, key) => {
-    values[key] = Number(value) || 0;
+  Array.from(form.elements).forEach((input) => {
+    if (!input.name) return;
+    values[input.name] = input.type === "number" ? Number(input.value) || 0 : input.value;
   });
   return values;
 }
@@ -163,7 +206,8 @@ function applyMarketRecord(record) {
     propertyTax: Number(taxRate.toFixed(2)),
     insurance: roundTo(estimatedInsurance, 50),
     maintenance: profile.maintenance,
-    hoa: profile.hoa
+    hoa: profile.hoa,
+    stateIncomeTaxRate: stateIncomeTaxRates[record.state] ?? defaults.stateIncomeTaxRate
   };
 
   if (Number.isFinite(record.homeGrowth)) values.homeGrowth = Math.max(-20, Math.min(30, record.homeGrowth));
@@ -201,6 +245,48 @@ function monthlyPayment(principal, annualRate, years) {
   return principal * (rate * (1 + rate) ** months) / ((1 + rate) ** months - 1);
 }
 
+function federalTax(taxableIncome, filingStatus) {
+  const config = federalTaxConfig[filingStatus] || federalTaxConfig.marriedJointly;
+  let tax = 0;
+  let floor = 0;
+  const taxable = Math.max(0, taxableIncome);
+
+  for (const bracket of config.brackets) {
+    const amount = Math.max(0, Math.min(taxable, bracket.upTo) - floor);
+    tax += amount * bracket.rate;
+    if (taxable <= bracket.upTo) break;
+    floor = bracket.upTo;
+  }
+
+  return tax;
+}
+
+function estimateAnnualTaxSavings(values, annualInterest, annualPropertyTax) {
+  const filingStatus = values.filingStatus || "marriedJointly";
+  const config = federalTaxConfig[filingStatus] || federalTaxConfig.marriedJointly;
+  const acquisitionDebtLimit = Math.max(0, values.mortgageInterestLimit || 0);
+  const loan = Math.max(0, values.homePrice - (values.homePrice * values.downPaymentPercent / 100));
+  const deductibleInterestRatio = loan > 0 ? Math.min(1, acquisitionDebtLimit / loan) : 0;
+  const deductibleInterest = annualInterest * deductibleInterestRatio;
+  const deductibleSalt = Math.min(Math.max(0, values.saltCap || 0), Math.max(0, annualPropertyTax));
+  const itemizedDeductions = Math.max(0, values.otherItemizedDeductions || 0) + deductibleInterest + deductibleSalt;
+  const standardDeduction = config.standardDeduction;
+  const income = Math.max(0, values.householdIncome || 0);
+  const federalSavings = Math.max(
+    0,
+    federalTax(income - standardDeduction, filingStatus) - federalTax(income - itemizedDeductions, filingStatus)
+  );
+  const stateSavings = (deductibleInterest + annualPropertyTax) * Math.max(0, values.stateIncomeTaxRate || 0) / 100;
+
+  return {
+    annual: federalSavings + stateSavings,
+    federal: federalSavings,
+    state: stateSavings,
+    itemizedDeductions,
+    standardDeduction
+  };
+}
+
 function calculate(values) {
   const months = Math.max(1, Math.round(values.years * 12));
   const downPayment = values.homePrice * values.downPaymentPercent / 100;
@@ -211,12 +297,16 @@ function calculate(values) {
   const stockRateMonthly = ((values.stockGrowth - values.expenseRatio) / 100) / 12;
   const homeRateMonthly = values.homeGrowth / 100 / 12;
   const rentRateMonthly = values.rentGrowth / 100 / 12;
+  const firstMonthInterest = loan * mortgageRateMonthly;
+  const firstYearPropertyTax = values.homePrice * values.propertyTax / 100;
+  const startingTaxSavings = estimateAnnualTaxSavings(values, firstMonthInterest * 12, firstYearPropertyTax).annual / 12;
   const startingOwnershipCost =
     payment +
     (values.homePrice * values.propertyTax / 100 / 12) +
     (values.homePrice * values.maintenance / 100 / 12) +
     (values.insurance / 12) +
-    values.hoa;
+    values.hoa -
+    startingTaxSavings;
 
   let balance = loan;
   let homeValue = values.homePrice;
@@ -238,7 +328,8 @@ function calculate(values) {
       (homeValue * values.propertyTax / 100 / 12) +
       (homeValue * values.maintenance / 100 / 12) +
       (values.insurance / 12) +
-      values.hoa;
+      values.hoa -
+      (estimateAnnualTaxSavings(values, interest * 12, homeValue * values.propertyTax / 100).annual / 12);
 
     const difference = ownerMonthlyCost - rent;
     if (difference > 0) {
@@ -270,6 +361,7 @@ function calculate(values) {
     rentNet: renterInvestments,
     payment,
     startingOwnershipCost,
+    startingTaxSavings,
     startingRent: values.rent,
     finalHomeValue: homeValue,
     remainingMortgage: balance,
@@ -389,6 +481,7 @@ function update() {
   outputs.rentNet.textContent = money.format(result.rentNet);
   outputs.mortgagePayment.textContent = money.format(result.payment);
   outputs.totalOwnershipCost.textContent = money.format(result.startingOwnershipCost);
+  outputs.taxSavingsMonthly.textContent = money.format(result.startingTaxSavings);
   outputs.startingRent.textContent = money.format(result.startingRent);
 
   outputs.winner.textContent = tie ? "About even" : buyWins ? "Buying" : "Renting + investing";
@@ -397,7 +490,7 @@ function update() {
     : `${buyWins ? "Buying" : "Renting + investing"} is ahead by ${money.format(delta)} after ${values.years} years.`;
 
   outputs.explanation.textContent =
-    `Buying ends with home equity after selling costs, minus the remaining mortgage. Renting invests ${money.format((values.homePrice * values.downPaymentPercent / 100) + (values.homePrice * values.buyingCosts / 100))} up front, plus any monthly savings versus owning.`;
+    `Buying ends with home equity after selling costs, minus the remaining mortgage. Owning costs include an estimated monthly tax benefit of ${money.format(result.startingTaxSavings)}. Renting invests ${money.format((values.homePrice * values.downPaymentPercent / 100) + (values.homePrice * values.buyingCosts / 100))} up front, plus any monthly savings versus owning.`;
 
   drawChart(result.points);
   renderYearlyTable(result.points);
