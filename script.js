@@ -40,6 +40,7 @@ const outputs = {
   mortgagePayment: document.querySelector("#mortgagePayment"),
   totalOwnershipCost: document.querySelector("#totalOwnershipCost"),
   taxSavingsMonthly: document.querySelector("#taxSavingsMonthly"),
+  taxSavingsBreakdown: document.querySelector("#taxSavingsBreakdown"),
   startingRent: document.querySelector("#startingRent"),
   yearlyRows: document.querySelector("#yearlyRows"),
   explanation: document.querySelector("#explanation")
@@ -299,7 +300,8 @@ function calculate(values) {
   const rentRateMonthly = values.rentGrowth / 100 / 12;
   const firstMonthInterest = loan * mortgageRateMonthly;
   const firstYearPropertyTax = values.homePrice * values.propertyTax / 100;
-  const startingTaxSavings = estimateAnnualTaxSavings(values, firstMonthInterest * 12, firstYearPropertyTax).annual / 12;
+  const startingTaxSavingsEstimate = estimateAnnualTaxSavings(values, firstMonthInterest * 12, firstYearPropertyTax);
+  const startingTaxSavings = startingTaxSavingsEstimate.annual / 12;
   const startingOwnershipCost =
     payment +
     (values.homePrice * values.propertyTax / 100 / 12) +
@@ -362,6 +364,7 @@ function calculate(values) {
     payment,
     startingOwnershipCost,
     startingTaxSavings,
+    startingTaxSavingsEstimate,
     startingRent: values.rent,
     finalHomeValue: homeValue,
     remainingMortgage: balance,
@@ -482,6 +485,8 @@ function update() {
   outputs.mortgagePayment.textContent = money.format(result.payment);
   outputs.totalOwnershipCost.textContent = money.format(result.startingOwnershipCost);
   outputs.taxSavingsMonthly.textContent = money.format(result.startingTaxSavings);
+  outputs.taxSavingsBreakdown.textContent =
+    `Federal: ${money.format(result.startingTaxSavingsEstimate.federal / 12)} / mo; state estimate: ${money.format(result.startingTaxSavingsEstimate.state / 12)} / mo. Income affects the federal bracket portion.`;
   outputs.startingRent.textContent = money.format(result.startingRent);
 
   outputs.winner.textContent = tie ? "About even" : buyWins ? "Buying" : "Renting + investing";
