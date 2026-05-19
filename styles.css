@@ -355,53 +355,6 @@ legend {
   text-transform: uppercase;
 }
 
-legend .legend-tooltip-trigger {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  min-height: 20px;
-  margin-left: 6px;
-  padding: 0;
-  border: 1px solid #c9bdab;
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--blue);
-  font-size: 0.72rem;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.legend-tooltip-text {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 10px);
-  z-index: 8;
-  display: block;
-  width: min(320px, 74vw);
-  padding: 12px;
-  border: 1px solid #c9bdab;
-  border-radius: 8px;
-  background: #17211f;
-  box-shadow: 0 12px 28px rgba(23, 33, 31, 0.18);
-  color: #ffffff;
-  font-size: 0.82rem;
-  font-weight: 650;
-  line-height: 1.35;
-  opacity: 0;
-  pointer-events: none;
-  text-align: left;
-  text-transform: none;
-  transform: translateY(4px);
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.legend-tooltip-trigger:hover .legend-tooltip-text,
-.legend-tooltip-trigger:focus .legend-tooltip-text {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 label {
   display: grid;
   gap: 6px;
@@ -503,6 +456,22 @@ select {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.35;
+}
+
+.section-heading-row {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.section-heading-row > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 
