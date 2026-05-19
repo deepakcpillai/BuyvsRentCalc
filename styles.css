@@ -474,6 +474,13 @@ select {
   text-transform: uppercase;
 }
 
+.section-heading-row .tooltip-text {
+  right: 0;
+  left: auto;
+  bottom: auto;
+  top: calc(100% + 10px);
+}
+
 
 .calculated-cost {
   display: grid;
